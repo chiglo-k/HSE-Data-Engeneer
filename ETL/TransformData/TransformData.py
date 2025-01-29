@@ -53,6 +53,6 @@ class OutputWeather(WeatherAnalyse):
         return  self.most_min_temperature()
 
 
-
-weather_function = OutputWeather(data_temp=pd.read_csv("IOT-temp.csv"))
-weather_function.run()
+if __name__ == "__main__":
+    weather_function = OutputWeather(data_temp=pd.read_csv("IOT-temp.csv"))
+    weather_function.run()
