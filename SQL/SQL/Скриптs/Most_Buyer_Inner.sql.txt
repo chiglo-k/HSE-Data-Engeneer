@@ -1,0 +1,13 @@
+with ranked_rows as (
+  select *,
+         row_number() over (partition by client order by amount::numeric DESC) as row_num
+  from inner_market
+)
+
+select cr.name_full, cr.info
+from clients_rus cr
+where cr.name_short = (
+  select client
+  from ranked_rows
+  where row_num = 2
+);

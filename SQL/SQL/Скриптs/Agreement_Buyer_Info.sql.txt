@@ -1,0 +1,14 @@
+with base_agreement as(
+select contract_num, agreement_num, data, total_amount from storage
+union all
+select contract_num, agreement_num, data, total_amount from export
+)
+
+
+select ji.number_unique, ce.name_full, ce.info
+from clients_export ce 
+join
+(select * 
+from base_agreement b1
+left join agreement_info ai on b1.contract_num = ai.number_unique) as ji
+on ce.name_short = ji.buyer;

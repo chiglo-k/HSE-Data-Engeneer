@@ -1,0 +1,239 @@
+#Справочники
+#Они используются для валидации данных при заполнении таблиц данных
+#Создание справочника по суднам компании
+create table vessels(
+name_rus text not null,
+name_eng text not null,
+code jsonb,
+primary key(name_rus)
+);
+
+#Создание справочника по транспортам перевозки
+create table transports(
+name_rus text not null,
+name_eng text not null,
+code_transports jsonb,
+primary key(name_rus)
+);
+
+#Создание справочника по иностранным покупателям
+create table clients_export(
+name_short text not null,
+name_full text not null,
+info jsonb,
+primary key(name_short)
+);
+
+#Создание справочника по производителю
+create table company_rus(
+name_short text not null,
+name_full text not null,
+eng_name text not null,
+info jsonb,
+primary key(name_short)
+);
+
+#Создание справочника по российским покупателям
+create table clients_rus(
+name_short text not null,
+name_full text not null,
+info jsonb,
+primary key(name_short)
+);
+
+#Справочник по продукции
+create table productions(
+product_name text not null,
+product_name_eng text not null,
+package float4 not null,
+primary key (product_name)
+);
+
+#Справочник по операциям
+create table operations(
+name_operation text not null,
+primary key (name_operation)
+);
+
+#Создание справочника по экспортным договорам
+#Используется с внешним ключом к покупателю
+create table agreement_info(
+number_unique text,
+date_of_begin date,
+seller text,
+buyer text,
+primary key(number_unique),
+foreign key(seller) references clients_export(name_short)
+);
+
+
+#Таблицы
+#Таблицы с _holder заполняются с помощью тригерных функций для проверки заполняемыз данных в таблицы inner_market,export,storage
+#Коносаменты
+create table conosaments(
+id serial primary key,
+route_number text not null,
+conosament text not null,
+date timestamp,
+vessel text not null,
+transport text not null,
+production text not null,
+package float4 not null,
+places int not null,
+total_net float8 generated always as (package * places) stored,
+operation_type text not null,
+foreign key(vessel) references vessels(name_rus),
+foreign key(transport) references transports(name_rus),
+foreign key(production) references productions(product_name),
+foreign key(operation_type) references operations(name_operation)
+);
+
+#Экспорт
+
+create table export_holder(
+id serial primary key,
+unique_conosament text unique not null,
+unique_product text unique not null,
+unique_package float4 unique not null
+);
+
+create table export(
+id serial primary key,
+contract_num text not null,
+agreement_num text not null,
+data timestamp not null,
+bl_num text not null,
+invoice text not null,
+product text not null,
+package float4 not null,
+place int not null,
+total_value float8 generated always as (package * place) stored,
+price money not null,
+total_amount money generated always as ((package * place) * price) stored,
+foreign key (contract_num) references agreement_info(number_unique),
+foreign key (product) references export_holder(unique_product),
+foreign key (package) references export_holder(unique_package)
+);
+
+
+#Хранение
+
+create table storage_holder(
+id serial primary key,
+unique_conosament text unique not null,
+unique_product text unique not null,
+unique_package float4 unique not null
+);
+
+create table storage(
+id serial primary key,
+contract_num text not null,
+agreement_num text not null,
+data timestamp not null,
+bl_num text not null,
+invoice text not null,
+product text not null,
+package float4 not null,
+place int not null,
+total_value float8 generated always as (package * place) stored,
+price money not null,
+total_amount money generated always as ((package * place) * price) stored,
+foreign key (contract_num) references agreement_info(number_unique),
+foreign key (product) references storage_holder(unique_product),
+foreign key (package) references storage_holder(unique_package)
+);
+
+#Внутренний рынок
+
+create table inner_holder(
+id serial primary key,
+unique_conosament text not null,
+unique_product text not null,
+unique_package float4 not null
+)
+
+create table inner_market(
+id serial primary key,
+conosament_num text not null,
+date timestamp not null,
+num_agreement text not null,
+client text not null,
+production text not null,
+package float4 not null,
+places int not null,
+total_net float8 generated always as (package * places) stored,
+price money not null,
+amount money generated always as ((package * places) * price) stored,
+foreign key (conosament_num) references inner_holder(unique_conosament),
+foreign key (production) references inner_holder(unique_product),
+foreign key (package) references inner_holder(unique_package),
+foreign key (client) references clients_rus(name_short)
+);
+
+
+#Тригерные функции для добавления информации по виду деятельности в таблицы (Внутренний рынок, Экспорт и Хранение)
+
+CREATE OR REPLACE FUNCTION add_to_inner_holder()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the operation type is 'внутренний рынок'
+    IF NEW.operation_type = 'внутренний рынок' THEN
+        INSERT INTO inner_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+create trigger insert_into_holder
+after insert on conosaments
+for each row execute function add_to_inner_holder();
+
+CREATE OR REPLACE FUNCTION add_to_export_holder()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the operation type is 'экспорт'
+    IF NEW.operation_type = 'экспорт' THEN
+        INSERT INTO export_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+create trigger insert_into_export
+after insert on conosaments
+for each row execute function add_to_export_holder();
+
+CREATE OR REPLACE FUNCTION add_to_storage_holder()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the operation type is 'хранение'
+    IF NEW.operation_type = 'хранение' THEN
+        INSERT INTO storage_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+create trigger insert_into_storage
+after insert on conosaments
+for each row execute function add_to_storage_holder();
+
+
+#Функции
+
+create  or replace function total_products()
+returns table(production text,total_places integer, total_products double precision) as $$
+begin
+	return query
+	select c.production, sum(c.places)::integer, sum(c.total_net)::double precision
+	from conosaments c 
+	group by c.production;
+end;
+$$ language plpgsql;
+

@@ -1,0 +1,13 @@
+with base_agreement as(
+select contract_num, agreement_num, data, total_amount from storage
+union all
+select contract_num, agreement_num, data, total_amount from export
+)
+
+select ai.buyer, b1.total_amount
+from base_agreement b1
+left join agreement_info ai on b1.contract_num = ai.number_unique
+where b1.total_amount::numeric > (
+	select avg(total_amount::numeric)
+	from base_agreement
+);

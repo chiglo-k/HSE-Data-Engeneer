@@ -1,0 +1,6 @@
+select production, max(price::numeric(10,2)), min(price::numeric(10,2)), avg(price::numeric(10,2)) 
+from (
+	select *
+	from inner_market im 
+	where im.production not like '%трубач%')
+group by production;

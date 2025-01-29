@@ -1,0 +1,1416 @@
+--
+-- PostgreSQL database cluster dump
+--
+
+-- Started on 2024-12-21 19:13:27
+
+SET default_transaction_read_only = off;
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+
+--
+-- Roles
+--
+
+CREATE ROLE chiga;
+ALTER ROLE chiga WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;
+
+--
+-- User Configurations
+--
+
+
+
+
+
+
+
+
+--
+-- Databases
+--
+
+--
+-- Database "template1" dump
+--
+
+\connect template1
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.2
+-- Dumped by pg_dump version 17.0
+
+-- Started on 2024-12-21 19:13:28
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+-- Completed on 2024-12-21 19:13:29
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- Database "oved_test" dump
+--
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.2
+-- Dumped by pg_dump version 17.0
+
+-- Started on 2024-12-21 19:13:29
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 5090 (class 1262 OID 16536)
+-- Name: oved_test; Type: DATABASE; Schema: -; Owner: chiga
+--
+
+CREATE DATABASE oved_test WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'Russian_Russia.1251';
+
+
+ALTER DATABASE oved_test OWNER TO chiga;
+
+\connect oved_test
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 240 (class 1255 OID 16974)
+-- Name: add_to_export_holder(); Type: FUNCTION; Schema: public; Owner: chiga
+--
+
+CREATE FUNCTION public.add_to_export_holder() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check if the operation type is 'экспорт'
+    IF NEW.operation_type = 'экспорт' THEN
+        INSERT INTO export_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.add_to_export_holder() OWNER TO chiga;
+
+--
+-- TOC entry 241 (class 1255 OID 16883)
+-- Name: add_to_inner_holder(); Type: FUNCTION; Schema: public; Owner: chiga
+--
+
+CREATE FUNCTION public.add_to_inner_holder() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check if the operation type is 'внутренний рынок'
+    IF NEW.operation_type = 'внутренний рынок' THEN
+        INSERT INTO inner_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.add_to_inner_holder() OWNER TO chiga;
+
+--
+-- TOC entry 239 (class 1255 OID 16900)
+-- Name: add_to_storage_holder(); Type: FUNCTION; Schema: public; Owner: chiga
+--
+
+CREATE FUNCTION public.add_to_storage_holder() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check if the operation type is 'хранение'
+    IF NEW.operation_type = 'хранение' THEN
+        INSERT INTO storage_holder (unique_conosament, unique_product, unique_package)
+        VALUES (NEW.conosament, NEW.production, NEW.package)
+        ON CONFLICT (unique_conosament, unique_product, unique_package) DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.add_to_storage_holder() OWNER TO chiga;
+
+--
+-- TOC entry 242 (class 1255 OID 17027)
+-- Name: total_products(); Type: FUNCTION; Schema: public; Owner: chiga
+--
+
+CREATE FUNCTION public.total_products() RETURNS TABLE(production text, total_places integer, total_products double precision)
+    LANGUAGE plpgsql
+    AS $$
+begin
+	return query
+	select c.production, sum(c.places)::integer, sum(c.total_net)::double precision
+	from conosaments c 
+	group by c.production;
+end;
+$$;
+
+
+ALTER FUNCTION public.total_products() OWNER TO chiga;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 223 (class 1259 OID 16668)
+-- Name: agreement_info; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.agreement_info (
+    number_unique text NOT NULL,
+    date_of_begin date,
+    seller text,
+    buyer text
+);
+
+
+ALTER TABLE public.agreement_info OWNER TO chiga;
+
+--
+-- TOC entry 222 (class 1259 OID 16640)
+-- Name: clients_export; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.clients_export (
+    name_short text NOT NULL,
+    name_full text NOT NULL,
+    info jsonb
+);
+
+
+ALTER TABLE public.clients_export OWNER TO chiga;
+
+--
+-- TOC entry 221 (class 1259 OID 16633)
+-- Name: clients_rus; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.clients_rus (
+    name_short text NOT NULL,
+    name_full text NOT NULL,
+    info jsonb
+);
+
+
+ALTER TABLE public.clients_rus OWNER TO chiga;
+
+--
+-- TOC entry 220 (class 1259 OID 16626)
+-- Name: company_rus; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.company_rus (
+    name_short text NOT NULL,
+    name_full text NOT NULL,
+    eng_name text NOT NULL,
+    info jsonb
+);
+
+
+ALTER TABLE public.company_rus OWNER TO chiga;
+
+--
+-- TOC entry 226 (class 1259 OID 16800)
+-- Name: conosaments; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.conosaments (
+    id integer NOT NULL,
+    route_number text NOT NULL,
+    conosament text NOT NULL,
+    date timestamp without time zone,
+    vessel text NOT NULL,
+    transport text NOT NULL,
+    production text NOT NULL,
+    package real NOT NULL,
+    places integer NOT NULL,
+    total_net double precision GENERATED ALWAYS AS ((package * (places)::double precision)) STORED,
+    operation_type text NOT NULL,
+    company text
+);
+
+
+ALTER TABLE public.conosaments OWNER TO chiga;
+
+--
+-- TOC entry 225 (class 1259 OID 16799)
+-- Name: conosaments_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.conosaments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.conosaments_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5091 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: conosaments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.conosaments_id_seq OWNED BY public.conosaments.id;
+
+
+--
+-- TOC entry 238 (class 1259 OID 16977)
+-- Name: export; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.export (
+    id integer NOT NULL,
+    contract_num text NOT NULL,
+    agreement_num text NOT NULL,
+    data timestamp without time zone NOT NULL,
+    bl_num text NOT NULL,
+    invoice text NOT NULL,
+    product text NOT NULL,
+    package real NOT NULL,
+    place integer NOT NULL,
+    total_value double precision GENERATED ALWAYS AS ((package * (place)::double precision)) STORED,
+    price money NOT NULL,
+    total_amount money GENERATED ALWAYS AS (((package * (place)::double precision) * price)) STORED
+);
+
+
+ALTER TABLE public.export OWNER TO chiga;
+
+--
+-- TOC entry 236 (class 1259 OID 16960)
+-- Name: export_holder; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.export_holder (
+    id integer NOT NULL,
+    unique_conosament text NOT NULL,
+    unique_product text NOT NULL,
+    unique_package real NOT NULL
+);
+
+
+ALTER TABLE public.export_holder OWNER TO chiga;
+
+--
+-- TOC entry 235 (class 1259 OID 16959)
+-- Name: export_holder_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.export_holder_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.export_holder_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5092 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: export_holder_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.export_holder_id_seq OWNED BY public.export_holder.id;
+
+
+--
+-- TOC entry 237 (class 1259 OID 16976)
+-- Name: export_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.export_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.export_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5093 (class 0 OID 0)
+-- Dependencies: 237
+-- Name: export_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.export_id_seq OWNED BY public.export.id;
+
+
+--
+-- TOC entry 228 (class 1259 OID 16830)
+-- Name: inner_holder; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.inner_holder (
+    id integer NOT NULL,
+    unique_conosament text NOT NULL,
+    unique_product text NOT NULL,
+    unique_package real NOT NULL
+);
+
+
+ALTER TABLE public.inner_holder OWNER TO chiga;
+
+--
+-- TOC entry 227 (class 1259 OID 16829)
+-- Name: inner_holder_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.inner_holder_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inner_holder_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5094 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: inner_holder_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.inner_holder_id_seq OWNED BY public.inner_holder.id;
+
+
+--
+-- TOC entry 232 (class 1259 OID 16903)
+-- Name: inner_market; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.inner_market (
+    id integer NOT NULL,
+    conosament_num text NOT NULL,
+    date timestamp without time zone NOT NULL,
+    num_agreement text NOT NULL,
+    client text NOT NULL,
+    production text NOT NULL,
+    package real NOT NULL,
+    places integer NOT NULL,
+    total_net double precision GENERATED ALWAYS AS ((package * (places)::double precision)) STORED,
+    price money NOT NULL,
+    amount money GENERATED ALWAYS AS (((package * (places)::double precision) * price)) STORED
+);
+
+
+ALTER TABLE public.inner_market OWNER TO chiga;
+
+--
+-- TOC entry 231 (class 1259 OID 16902)
+-- Name: inner_market_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.inner_market_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inner_market_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5095 (class 0 OID 0)
+-- Dependencies: 231
+-- Name: inner_market_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.inner_market_id_seq OWNED BY public.inner_market.id;
+
+
+--
+-- TOC entry 224 (class 1259 OID 16716)
+-- Name: operations; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.operations (
+    name_operation text NOT NULL
+);
+
+
+ALTER TABLE public.operations OWNER TO chiga;
+
+--
+-- TOC entry 217 (class 1259 OID 16598)
+-- Name: productions; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.productions (
+    product_name text NOT NULL,
+    product_name_eng text NOT NULL,
+    package real NOT NULL
+);
+
+
+ALTER TABLE public.productions OWNER TO chiga;
+
+--
+-- TOC entry 234 (class 1259 OID 16934)
+-- Name: storage; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.storage (
+    id integer NOT NULL,
+    contract_num text NOT NULL,
+    agreement_num text NOT NULL,
+    data timestamp without time zone NOT NULL,
+    bl_num text NOT NULL,
+    invoice text NOT NULL,
+    product text NOT NULL,
+    package real NOT NULL,
+    place integer NOT NULL,
+    total_value double precision GENERATED ALWAYS AS ((package * (place)::double precision)) STORED,
+    price money NOT NULL,
+    total_amount money GENERATED ALWAYS AS (((package * (place)::double precision) * price)) STORED
+);
+
+
+ALTER TABLE public.storage OWNER TO chiga;
+
+--
+-- TOC entry 230 (class 1259 OID 16886)
+-- Name: storage_holder; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.storage_holder (
+    id integer NOT NULL,
+    unique_conosament text NOT NULL,
+    unique_product text NOT NULL,
+    unique_package real NOT NULL
+);
+
+
+ALTER TABLE public.storage_holder OWNER TO chiga;
+
+--
+-- TOC entry 229 (class 1259 OID 16885)
+-- Name: storage_holder_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.storage_holder_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.storage_holder_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5096 (class 0 OID 0)
+-- Dependencies: 229
+-- Name: storage_holder_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.storage_holder_id_seq OWNED BY public.storage_holder.id;
+
+
+--
+-- TOC entry 233 (class 1259 OID 16933)
+-- Name: storage_id_seq; Type: SEQUENCE; Schema: public; Owner: chiga
+--
+
+CREATE SEQUENCE public.storage_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.storage_id_seq OWNER TO chiga;
+
+--
+-- TOC entry 5097 (class 0 OID 0)
+-- Dependencies: 233
+-- Name: storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: chiga
+--
+
+ALTER SEQUENCE public.storage_id_seq OWNED BY public.storage.id;
+
+
+--
+-- TOC entry 219 (class 1259 OID 16619)
+-- Name: transports; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.transports (
+    name_rus text NOT NULL,
+    name_eng text NOT NULL,
+    code_transports jsonb
+);
+
+
+ALTER TABLE public.transports OWNER TO chiga;
+
+--
+-- TOC entry 218 (class 1259 OID 16612)
+-- Name: vessels; Type: TABLE; Schema: public; Owner: chiga
+--
+
+CREATE TABLE public.vessels (
+    name_rus text NOT NULL,
+    name_eng text NOT NULL,
+    code jsonb
+);
+
+
+ALTER TABLE public.vessels OWNER TO chiga;
+
+--
+-- TOC entry 4830 (class 2604 OID 16803)
+-- Name: conosaments id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments ALTER COLUMN id SET DEFAULT nextval('public.conosaments_id_seq'::regclass);
+
+
+--
+-- TOC entry 4841 (class 2604 OID 16980)
+-- Name: export id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export ALTER COLUMN id SET DEFAULT nextval('public.export_id_seq'::regclass);
+
+
+--
+-- TOC entry 4840 (class 2604 OID 16963)
+-- Name: export_holder id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder ALTER COLUMN id SET DEFAULT nextval('public.export_holder_id_seq'::regclass);
+
+
+--
+-- TOC entry 4832 (class 2604 OID 16833)
+-- Name: inner_holder id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder ALTER COLUMN id SET DEFAULT nextval('public.inner_holder_id_seq'::regclass);
+
+
+--
+-- TOC entry 4834 (class 2604 OID 16906)
+-- Name: inner_market id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market ALTER COLUMN id SET DEFAULT nextval('public.inner_market_id_seq'::regclass);
+
+
+--
+-- TOC entry 4837 (class 2604 OID 16937)
+-- Name: storage id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage ALTER COLUMN id SET DEFAULT nextval('public.storage_id_seq'::regclass);
+
+
+--
+-- TOC entry 4833 (class 2604 OID 16889)
+-- Name: storage_holder id; Type: DEFAULT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder ALTER COLUMN id SET DEFAULT nextval('public.storage_holder_id_seq'::regclass);
+
+
+--
+-- TOC entry 5069 (class 0 OID 16668)
+-- Dependencies: 223
+-- Data for Name: agreement_info; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.agreement_info (number_unique, date_of_begin, seller, buyer) FROM stdin;
+410/33961/000	2015-06-01	МСИ	KTI
+344/33957/015	2018-04-02	МСИ	Changrun
+410/33911/012	2022-02-01	ТРК	KTI
+584/33961/032	2022-02-01	ТРК	Oceanic
+\.
+
+
+--
+-- TOC entry 5068 (class 0 OID 16640)
+-- Dependencies: 222
+-- Data for Name: clients_export; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.clients_export (name_short, name_full, info) FROM stdin;
+KTI	KTI Company Limited LTD	{"info": {"a/c": "0313130", "swift": "ADDFDAD", "adress": "1,Jung-gu,Busan"}}
+Oceanic	Oceanic Seafood Traiding CO., LTD	{"info": {"a/c": "0114001", "swift": "AXDOAP", "adress": "120,Hangzhou,China"}}
+Changrun	Honkong Changrun International Fishing, LTD	{"info": {"a/c": "0237091", "swift": "AXXAAP", "adress": "689,Shanghai,China"}}
+\.
+
+
+--
+-- TOC entry 5067 (class 0 OID 16633)
+-- Dependencies: 221
+-- Data for Name: clients_rus; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.clients_rus (name_short, name_full, info) FROM stdin;
+Омега	ООО "Омега"	{"info": {"bank": "ОА Альфа-Банк", "current account": "120023", "correspondent account": "123890"}}
+Антей	ООО "Антей"	{"info": {"bank": "ООО Сбербанк", "current account": "312456", "correspondent account": "456721"}}
+Примкраб	ООО "Примкраб"	{"info": {"bank": "ООО ВТБ", "current account": "378134", "correspondent account": "564217"}}
+Фили	ООО "Торговый дом Фили"	{"info": {"bank": "ПАО Примсоцбанк", "current account": "372289", "correspondent account": "511461"}}
+\.
+
+
+--
+-- TOC entry 5066 (class 0 OID 16626)
+-- Dependencies: 220
+-- Data for Name: company_rus; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.company_rus (name_short, name_full, eng_name, info) FROM stdin;
+ТРК	ООО"Tихрыбком"	Tikhrybcom Co.,LTD	{"info": {"INN": "490905", "KPP": "490901", "OGRN": "1024900", "OKPO": "339611"}, "adress": "1,Port st.,Magadan", "code_ssd": "0001"}
+МСИ	ООО"Маг-Си"	Mag-Sea International Co.,LTD	{"info": {"INN": "490907", "KPP": "490901", "OGRN": "1024901", "OKPO": "339612"}, "adress": "1,Port st.,Magadan", "code_ssd": "0002"}
+\.
+
+
+--
+-- TOC entry 5072 (class 0 OID 16800)
+-- Dependencies: 226
+-- Data for Name: conosaments; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.conosaments (id, route_number, conosament, date, vessel, transport, production, package, places, operation_type, company) FROM stdin;
+5	1-T	1/2	2024-12-15 21:21:33.784753	Харбиз	Лира	Опилио в/м	10	350	хранение	ТРК
+13	1-MV	20/2	2024-12-15 21:36:47.504088	Морской Волк	Лира	Минтай б/г	14	600	экспорт	ТРК
+15	1-SH	12/6	2024-12-15 21:46:59.846793	Си Хантер	Лира	Сельдь н/р	13	800	внутренний рынок	ТРК
+16	3-OM	1-OM	2024-12-15 21:52:34.808207	Омолон	Выборг	Живой синий краб	1	200	экспорт	МСИ
+17	5-TN	10/1-TL	2024-12-15 21:56:28.000892	Талан	Высоцк	Филе трески	22.5	240	хранение	МСИ
+18	14-ASH	43/3	2024-12-16 11:23:58.257572	Александр Шалин	Выборг	Мясо трубача мороженое	22	100	внутренний рынок	МСИ
+\.
+
+
+--
+-- TOC entry 5084 (class 0 OID 16977)
+-- Dependencies: 238
+-- Data for Name: export; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.export (id, contract_num, agreement_num, data, bl_num, invoice, product, package, place, price) FROM stdin;
+2	410/33961/000	14	2024-12-16 14:11:41.760538	OMVR-10M	10M	Живой синий краб	1	200	1 200,00 ?
+3	584/33961/032	35	2024-12-16 14:13:04.976692	MVLR-6T	6T	Минтай б/г	14	300	900,00 ?
+\.
+
+
+--
+-- TOC entry 5082 (class 0 OID 16960)
+-- Dependencies: 236
+-- Data for Name: export_holder; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.export_holder (id, unique_conosament, unique_product, unique_package) FROM stdin;
+2	20/2	Минтай б/г	14
+4	1-OM	Живой синий краб	1
+\.
+
+
+--
+-- TOC entry 5074 (class 0 OID 16830)
+-- Dependencies: 228
+-- Data for Name: inner_holder; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.inner_holder (id, unique_conosament, unique_product, unique_package) FROM stdin;
+5	12/6	Сельдь н/р	13
+6	43/3	Мясо трубача мороженое	22
+\.
+
+
+--
+-- TOC entry 5078 (class 0 OID 16903)
+-- Dependencies: 232
+-- Data for Name: inner_market; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.inner_market (id, conosament_num, date, num_agreement, client, production, package, places, price) FROM stdin;
+1	12/6	2024-12-16 11:47:07.643436	23-T	Антей	Сельдь н/р	13	340	100,00 ?
+2	12/6	2024-12-16 11:47:38.739343	24-T	Омега	Сельдь н/р	13	100	110,00 ?
+4	12/6	2024-12-16 11:50:01.640714	25-Т	Примкраб	Сельдь н/р	13	50	100,00 ?
+3	43/3	2024-12-16 11:49:16.128426	15-М	Примкраб	Мясо трубача мороженое	22	100	1 500,00 ?
+\.
+
+
+--
+-- TOC entry 5070 (class 0 OID 16716)
+-- Dependencies: 224
+-- Data for Name: operations; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.operations (name_operation) FROM stdin;
+внутренний рынок
+экспорт
+хранение
+\.
+
+
+--
+-- TOC entry 5063 (class 0 OID 16598)
+-- Dependencies: 217
+-- Data for Name: productions; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.productions (product_name, product_name_eng, package) FROM stdin;
+Сельдь н/р	Herring w/r	13
+Минтай б/г	Pollock w/r	14
+Мука рыбная	White fish meal	40
+Опилио в/м	Frozen boiled opilio snow crab	10
+Мясо трубача мороженое	Frozen whelk meat	22
+Филе трески	Pacific Cod Fillet with skin and bone, frozen	22.5
+Живой синий краб	Blue King crab live	1
+\.
+
+
+--
+-- TOC entry 5080 (class 0 OID 16934)
+-- Dependencies: 234
+-- Data for Name: storage; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.storage (id, contract_num, agreement_num, data, bl_num, invoice, product, package, place, price) FROM stdin;
+1	410/33911/012	10	2024-12-16 11:35:16.321836	HZLR-1T	1N	Опилио в/м	10	350	10 000,00 ?
+2	344/33957/015	1	2024-12-16 11:41:04.150348	TLVS-1M	1N	Филе трески	22.5	240	2 500,00 ?
+\.
+
+
+--
+-- TOC entry 5076 (class 0 OID 16886)
+-- Dependencies: 230
+-- Data for Name: storage_holder; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.storage_holder (id, unique_conosament, unique_product, unique_package) FROM stdin;
+1	1/2	Опилио в/м	10
+6	10/1-TL	Филе трески	22.5
+\.
+
+
+--
+-- TOC entry 5065 (class 0 OID 16619)
+-- Dependencies: 219
+-- Data for Name: transports; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.transports (name_rus, name_eng, code_transports) FROM stdin;
+Лира	Lyra	{"code": "LR", "code_transport": "2000"}
+Таврия	Tavria	{"code": "TV", "code_transport": "2002"}
+Бикин	Bikin	{"code": "BK", "code_transport": "2003"}
+Выборг	Vyborg	{"code": "VB", "code_transport": "2004"}
+Высоцк	Vysotsk	{"code": "VS", "code_transport": "2001"}
+\.
+
+
+--
+-- TOC entry 5064 (class 0 OID 16612)
+-- Dependencies: 218
+-- Data for Name: vessels; Type: TABLE DATA; Schema: public; Owner: chiga
+--
+
+COPY public.vessels (name_rus, name_eng, code) FROM stdin;
+Талан	Talan	{"code": "TL", "vessel_code": "1000", "code_country": {"EU": "EU1", "China": "CH-1", "Korea": "KOR1"}}
+Вилига	Viliga	{"code": "VL", "vessel_code": "1001", "code_country": {"EU": "EU2", "China": "CH-2", "Korea": "KOR2"}}
+Морской Волк	Morskoy Volk	{"code": "MV", "vessel_code": "1003", "code_country": {"EU": "EU4", "China": "CH-4", "Korea": "KOR4"}}
+Си Хантер	Sea Hunter	{"code": "SHV", "vessel_code": "1004", "code_country": {"EU": "EU5", "China": "CH-5", "Korea": "KOR5"}}
+Омолон	Omolon	{"code": "OM", "vessel_code": "1005", "code_country": {"China": "CH-7"}}
+Харбиз	Harbiz	{"code": "HZ", "vessel_code": "1005", "code_country": {"EU": "EU6", "China": "CH-6"}}
+Александр Шалин	Aleksandr Shalin	{"code": "SH", "vessel_code": "1002", "code_country": {"EU": "EU3", "China": "CH-3", "Korea": "KOR3"}}
+\.
+
+
+--
+-- TOC entry 5098 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: conosaments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.conosaments_id_seq', 18, true);
+
+
+--
+-- TOC entry 5099 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: export_holder_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.export_holder_id_seq', 4, true);
+
+
+--
+-- TOC entry 5100 (class 0 OID 0)
+-- Dependencies: 237
+-- Name: export_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.export_id_seq', 3, true);
+
+
+--
+-- TOC entry 5101 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: inner_holder_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.inner_holder_id_seq', 6, true);
+
+
+--
+-- TOC entry 5102 (class 0 OID 0)
+-- Dependencies: 231
+-- Name: inner_market_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.inner_market_id_seq', 4, true);
+
+
+--
+-- TOC entry 5103 (class 0 OID 0)
+-- Dependencies: 229
+-- Name: storage_holder_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.storage_holder_id_seq', 6, true);
+
+
+--
+-- TOC entry 5104 (class 0 OID 0)
+-- Dependencies: 233
+-- Name: storage_id_seq; Type: SEQUENCE SET; Schema: public; Owner: chiga
+--
+
+SELECT pg_catalog.setval('public.storage_id_seq', 2, true);
+
+
+--
+-- TOC entry 4857 (class 2606 OID 16674)
+-- Name: agreement_info agreement_info_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.agreement_info
+    ADD CONSTRAINT agreement_info_pkey PRIMARY KEY (number_unique);
+
+
+--
+-- TOC entry 4855 (class 2606 OID 16646)
+-- Name: clients_export clients_export_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.clients_export
+    ADD CONSTRAINT clients_export_pkey PRIMARY KEY (name_short);
+
+
+--
+-- TOC entry 4853 (class 2606 OID 16639)
+-- Name: clients_rus clients_rus_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.clients_rus
+    ADD CONSTRAINT clients_rus_pkey PRIMARY KEY (name_short);
+
+
+--
+-- TOC entry 4851 (class 2606 OID 16632)
+-- Name: company_rus company_rus_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.company_rus
+    ADD CONSTRAINT company_rus_pkey PRIMARY KEY (name_short);
+
+
+--
+-- TOC entry 4861 (class 2606 OID 16808)
+-- Name: conosaments conosaments_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT conosaments_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4887 (class 2606 OID 16967)
+-- Name: export_holder export_holder_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder
+    ADD CONSTRAINT export_holder_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4889 (class 2606 OID 16969)
+-- Name: export_holder export_holder_unique_conosament_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder
+    ADD CONSTRAINT export_holder_unique_conosament_key UNIQUE (unique_conosament);
+
+
+--
+-- TOC entry 4891 (class 2606 OID 16973)
+-- Name: export_holder export_holder_unique_package_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder
+    ADD CONSTRAINT export_holder_unique_package_key UNIQUE (unique_package);
+
+
+--
+-- TOC entry 4893 (class 2606 OID 16971)
+-- Name: export_holder export_holder_unique_product_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder
+    ADD CONSTRAINT export_holder_unique_product_key UNIQUE (unique_product);
+
+
+--
+-- TOC entry 4897 (class 2606 OID 16986)
+-- Name: export export_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export
+    ADD CONSTRAINT export_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4863 (class 2606 OID 16837)
+-- Name: inner_holder inner_holder_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder
+    ADD CONSTRAINT inner_holder_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4883 (class 2606 OID 16912)
+-- Name: inner_market inner_market_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market
+    ADD CONSTRAINT inner_market_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4859 (class 2606 OID 16722)
+-- Name: operations operations_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.operations
+    ADD CONSTRAINT operations_pkey PRIMARY KEY (name_operation);
+
+
+--
+-- TOC entry 4845 (class 2606 OID 16604)
+-- Name: productions productions_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.productions
+    ADD CONSTRAINT productions_pkey PRIMARY KEY (product_name);
+
+
+--
+-- TOC entry 4873 (class 2606 OID 16893)
+-- Name: storage_holder storage_holder_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder
+    ADD CONSTRAINT storage_holder_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4875 (class 2606 OID 16895)
+-- Name: storage_holder storage_holder_unique_conosament_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder
+    ADD CONSTRAINT storage_holder_unique_conosament_key UNIQUE (unique_conosament);
+
+
+--
+-- TOC entry 4877 (class 2606 OID 16899)
+-- Name: storage_holder storage_holder_unique_package_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder
+    ADD CONSTRAINT storage_holder_unique_package_key UNIQUE (unique_package);
+
+
+--
+-- TOC entry 4879 (class 2606 OID 16897)
+-- Name: storage_holder storage_holder_unique_product_key; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder
+    ADD CONSTRAINT storage_holder_unique_product_key UNIQUE (unique_product);
+
+
+--
+-- TOC entry 4885 (class 2606 OID 16943)
+-- Name: storage storage_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage
+    ADD CONSTRAINT storage_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4849 (class 2606 OID 16625)
+-- Name: transports transports_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.transports
+    ADD CONSTRAINT transports_pkey PRIMARY KEY (name_rus);
+
+
+--
+-- TOC entry 4865 (class 2606 OID 16849)
+-- Name: inner_holder unique_conosament; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder
+    ADD CONSTRAINT unique_conosament UNIQUE (unique_conosament);
+
+
+--
+-- TOC entry 4867 (class 2606 OID 17021)
+-- Name: inner_holder unique_conosament_product_package; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder
+    ADD CONSTRAINT unique_conosament_product_package UNIQUE (unique_conosament, unique_product, unique_package);
+
+
+--
+-- TOC entry 4895 (class 2606 OID 17023)
+-- Name: export_holder unique_export_combination; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export_holder
+    ADD CONSTRAINT unique_export_combination UNIQUE (unique_conosament, unique_product, unique_package);
+
+
+--
+-- TOC entry 4869 (class 2606 OID 16853)
+-- Name: inner_holder unique_package; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder
+    ADD CONSTRAINT unique_package UNIQUE (unique_package);
+
+
+--
+-- TOC entry 4871 (class 2606 OID 16851)
+-- Name: inner_holder unique_product; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_holder
+    ADD CONSTRAINT unique_product UNIQUE (unique_product);
+
+
+--
+-- TOC entry 4881 (class 2606 OID 17025)
+-- Name: storage_holder unique_storage_combination; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage_holder
+    ADD CONSTRAINT unique_storage_combination UNIQUE (unique_conosament, unique_product, unique_package);
+
+
+--
+-- TOC entry 4847 (class 2606 OID 16618)
+-- Name: vessels vessels_pkey; Type: CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.vessels
+    ADD CONSTRAINT vessels_pkey PRIMARY KEY (name_rus);
+
+
+--
+-- TOC entry 4915 (class 2620 OID 16975)
+-- Name: conosaments insert_into_export; Type: TRIGGER; Schema: public; Owner: chiga
+--
+
+CREATE TRIGGER insert_into_export AFTER INSERT ON public.conosaments FOR EACH ROW EXECUTE FUNCTION public.add_to_export_holder();
+
+
+--
+-- TOC entry 4916 (class 2620 OID 16884)
+-- Name: conosaments insert_into_holder; Type: TRIGGER; Schema: public; Owner: chiga
+--
+
+CREATE TRIGGER insert_into_holder AFTER INSERT ON public.conosaments FOR EACH ROW EXECUTE FUNCTION public.add_to_inner_holder();
+
+
+--
+-- TOC entry 4917 (class 2620 OID 16901)
+-- Name: conosaments insert_into_storage; Type: TRIGGER; Schema: public; Owner: chiga
+--
+
+CREATE TRIGGER insert_into_storage AFTER INSERT ON public.conosaments FOR EACH ROW EXECUTE FUNCTION public.add_to_storage_holder();
+
+
+--
+-- TOC entry 4898 (class 2606 OID 17013)
+-- Name: agreement_info agreement_info_buyer_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.agreement_info
+    ADD CONSTRAINT agreement_info_buyer_fkey FOREIGN KEY (buyer) REFERENCES public.clients_export(name_short);
+
+
+--
+-- TOC entry 4900 (class 2606 OID 16824)
+-- Name: conosaments conosaments_operation_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT conosaments_operation_type_fkey FOREIGN KEY (operation_type) REFERENCES public.operations(name_operation);
+
+
+--
+-- TOC entry 4901 (class 2606 OID 16819)
+-- Name: conosaments conosaments_production_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT conosaments_production_fkey FOREIGN KEY (production) REFERENCES public.productions(product_name);
+
+
+--
+-- TOC entry 4902 (class 2606 OID 16814)
+-- Name: conosaments conosaments_transport_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT conosaments_transport_fkey FOREIGN KEY (transport) REFERENCES public.transports(name_rus);
+
+
+--
+-- TOC entry 4903 (class 2606 OID 16809)
+-- Name: conosaments conosaments_vessel_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT conosaments_vessel_fkey FOREIGN KEY (vessel) REFERENCES public.vessels(name_rus);
+
+
+--
+-- TOC entry 4912 (class 2606 OID 16987)
+-- Name: export export_contract_num_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export
+    ADD CONSTRAINT export_contract_num_fkey FOREIGN KEY (contract_num) REFERENCES public.agreement_info(number_unique);
+
+
+--
+-- TOC entry 4913 (class 2606 OID 16997)
+-- Name: export export_package_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export
+    ADD CONSTRAINT export_package_fkey FOREIGN KEY (package) REFERENCES public.export_holder(unique_package);
+
+
+--
+-- TOC entry 4914 (class 2606 OID 16992)
+-- Name: export export_product_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.export
+    ADD CONSTRAINT export_product_fkey FOREIGN KEY (product) REFERENCES public.export_holder(unique_product);
+
+
+--
+-- TOC entry 4904 (class 2606 OID 17003)
+-- Name: conosaments fk_company; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.conosaments
+    ADD CONSTRAINT fk_company FOREIGN KEY (company) REFERENCES public.company_rus(name_short);
+
+
+--
+-- TOC entry 4899 (class 2606 OID 17008)
+-- Name: agreement_info fk_company; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.agreement_info
+    ADD CONSTRAINT fk_company FOREIGN KEY (seller) REFERENCES public.company_rus(name_short);
+
+
+--
+-- TOC entry 4905 (class 2606 OID 16928)
+-- Name: inner_market inner_market_client_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market
+    ADD CONSTRAINT inner_market_client_fkey FOREIGN KEY (client) REFERENCES public.clients_rus(name_short);
+
+
+--
+-- TOC entry 4906 (class 2606 OID 16913)
+-- Name: inner_market inner_market_conosament_num_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market
+    ADD CONSTRAINT inner_market_conosament_num_fkey FOREIGN KEY (conosament_num) REFERENCES public.inner_holder(unique_conosament);
+
+
+--
+-- TOC entry 4907 (class 2606 OID 16923)
+-- Name: inner_market inner_market_package_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market
+    ADD CONSTRAINT inner_market_package_fkey FOREIGN KEY (package) REFERENCES public.inner_holder(unique_package);
+
+
+--
+-- TOC entry 4908 (class 2606 OID 16918)
+-- Name: inner_market inner_market_production_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.inner_market
+    ADD CONSTRAINT inner_market_production_fkey FOREIGN KEY (production) REFERENCES public.inner_holder(unique_product);
+
+
+--
+-- TOC entry 4909 (class 2606 OID 16944)
+-- Name: storage storage_contract_num_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage
+    ADD CONSTRAINT storage_contract_num_fkey FOREIGN KEY (contract_num) REFERENCES public.agreement_info(number_unique);
+
+
+--
+-- TOC entry 4910 (class 2606 OID 16954)
+-- Name: storage storage_package_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage
+    ADD CONSTRAINT storage_package_fkey FOREIGN KEY (package) REFERENCES public.storage_holder(unique_package);
+
+
+--
+-- TOC entry 4911 (class 2606 OID 16949)
+-- Name: storage storage_product_fkey; Type: FK CONSTRAINT; Schema: public; Owner: chiga
+--
+
+ALTER TABLE ONLY public.storage
+    ADD CONSTRAINT storage_product_fkey FOREIGN KEY (product) REFERENCES public.storage_holder(unique_product);
+
+
+-- Completed on 2024-12-21 19:13:29
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- Database "postgres" dump
+--
+
+\connect postgres
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.2
+-- Dumped by pg_dump version 17.0
+
+-- Started on 2024-12-21 19:13:29
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+-- Completed on 2024-12-21 19:13:30
+
+--
+-- PostgreSQL database dump complete
+--
+
+-- Completed on 2024-12-21 19:13:30
+
+--
+-- PostgreSQL database cluster dump complete
+--
+
