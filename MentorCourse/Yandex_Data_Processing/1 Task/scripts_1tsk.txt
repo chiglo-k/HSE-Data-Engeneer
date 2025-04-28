@@ -1,0 +1,79 @@
+CREATE SCHEMA etl; # Создание схемы в HIVE
+
+
+CREATE TABLE etl.transactions (
+  transaction_id INT,
+  user_id INT,
+  amount DECIMAL(10,2),
+  currency VARCHAR(3),
+  transaction_date TIMESTAMP,
+  is_fraud INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+LOAD DATA INPATH 's3a://bck-ts/transactions_v2.csv' INTO TABLE etl.transactions;
+
+
+CREATE TABLE etl.logs (
+  log_id INT,
+  transaction_id INT,
+  category STRING,
+  comment STRING,
+  log_timestamp TIMESTAMP
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ';'
+STORED AS TEXTFILE;
+
+LOAD DATA INPATH 's3a://bck-ts/logs_v2.txt' INTO TABLE etl.logs;
+
+
+-- Создание таблиц и загрузка данных с s3 backet -- 
+
+#1
+
+SELECT currency, SUM(amount) 
+FROM etl.transactions  
+WHERE currency IN ('USD', 'EUR', 'RUB')
+GROUP BY currency;
+
+---cte--
+WITH group_currency AS (
+    SELECT 
+        currency,
+        sum(amount) as total_amount
+    FROM etl.transactions
+    WHERE currency in ('USD','EUR','RUB')
+    GROUP BY currency
+)
+SELECT * FROM group_currency;
+
+#2
+
+SELECT is_fraud,
+       COUNT(*) AS transaction_count,
+       SUM(amount) AS total_amount,
+       AVG(amount) AS avg_amount
+FROM etl.transactions
+GROUP BY is_fraud;
+
+#3
+
+SELECT TO_DATE(transaction_date) AS transaction_data,
+       COUNT(*) AS transaction_count,
+       SUM(amount) AS total_amount,
+       AVG(amount) AS avg_amount
+FROM etl.transactions
+GROUP BY TO_DATE(transaction_date);
+
+#4
+
+SELECT 
+    t.transaction_id,
+    COUNT(l.log_id) AS total_log_count,
+    MAX(l.category) AS frequent_category
+FROM etl.transactions t
+LEFT JOIN etl.logs l ON t.transaction_id = l.transaction_id
+GROUP BY t.transaction_id;

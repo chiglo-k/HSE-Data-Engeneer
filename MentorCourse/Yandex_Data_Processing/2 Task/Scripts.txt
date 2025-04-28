@@ -1,0 +1,79 @@
+CREATE TABLE etl.orders (
+    order_id UInt16,
+    user_id UInt8,
+    order_date DateTime,
+    total_amount Float32,
+    payment_status String
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMM(order_date)
+ORDER BY (order_id, order_date)
+
+
+CREATE TABLE etl.order_items (
+    item_id UInt8,
+    order_id UInt16,
+    product_name String,
+    product_price Float32,
+    quantity UInt8
+)
+ENGINE = MergeTree()
+ORDER BY (order_id)
+
+
+INSERT INTO etl.orders
+SELECT *
+FROM s3(
+  'https://storage.yandexcloud.net/bck-ts/orders.csv',
+  'CSV',
+  'order_id UInt64, user_id UInt64, order_date DateTime, total_amount Decimal(10,2), payment_status String'
+);
+
+
+INSERT INTO db.order_items
+SELECT *
+FROM s3(
+  'https://storage.yandexcloud.net/bck-ts/order_items.txt',
+  'CSV',
+  'order_item_id UInt64, order_id UInt64, product_name String, product_price Decimal(10,2), quantity UInt64'
+)
+SETTINGS format_csv_delimiter = ';', input_format_csv_skip_first_lines = 1
+
+
+
+#1
+
+SELECT payment_status, count(order_id) as count_order, 
+       sum(total_amount) as sum_amount, 
+       avg(total_amount) as avg_amount
+FROM etl.orders
+GROUP BY payment_status
+
+
+#2
+
+SELECT count(oi.product_name) as count_product,
+       sum(o.total_amount) as sum_amount,
+       avg(oi.product_price) as avg_price
+FROM etl.orders as o
+LEFT JOIN etl.order_items oi ON o.order_id=oi.order_id
+
+
+#3
+
+SELECT EXTRACT(MONTH FROM order_date) as month_date,
+       EXTRACT(DAY FROM order_date) as day_date,
+       count(order_id) as count_order,
+       sum(product_price) as sum_price
+FROM orders o
+LEFT JOIN order_items oi ON o.order_id=oi.order_id
+GROUP BY EXTRACT(MONTH FROM order_date), EXTRACT(DAY FROM order_date)
+
+#4
+SELECT user_id, count(order_id) as count_order
+FROM orders o
+GROUP BY user_id
+ORDER BY count(order_id) DESC
+LIMIT 3
+
+
