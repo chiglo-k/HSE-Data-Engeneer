@@ -7,7 +7,7 @@
 Выполнить необходимо с использованием сервиса Data Transfer.
 
 
-**1. Создать БД Yandex DataBase:**
+**1. Создать Yandex DataBase:**
 
 
 ```SQL
