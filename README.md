@@ -1,2 +1,2 @@
-# HSE-Data-Engeneer
+# HSE-Data-Engineer
 HSE Master's program
