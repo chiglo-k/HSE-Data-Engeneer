@@ -26,6 +26,9 @@ CREATE TABLE it_salary_new(
 Для подготовки данных и создание датасета используем создание нескольких таблиц с данными, 
 чтобы затем использовать их для подготовки данных в основной таблице.
 
+<details>
+<summary>SQL скрипт подготовки данных</summary>
+
 ```SQL
 CREATE TABLE temp_job_titles(
   id Uint32,
@@ -89,10 +92,13 @@ INSERT INTO temp_locations(id, value) VALUES
     (19, 'Egypt'),
     (20, 'Switzerland');
 ```
-
+</details>
 Затем приступаем к заполнению основной таблицы, данные в которой будут созданы рандомно в размере 1000 строк,
 это поможет нагенерировать необходимый объяем тестовых данных, не копируя и вставляя код, а исполняя его столько раз сколько необходимо. 
 
+<details>
+<summary>SQL скрипт Insert Values</summary>
+    
 ```SQL
 INSERT INTO it_salary_new (id, job_title, salary_usd, experience_level, company_location)
 SELECT 
@@ -107,11 +113,13 @@ FROM
     CROSS JOIN temp_locations AS l
 LIMIT 1000;
 ```
+</details>
 
 3. Создать трансфер в **Object Storage:**
-
    
+![](1st%20task/Screen/transfer_go.png)
 
+![](1st%20task/Screen/result_transfer.png)
    
 
 
