@@ -8,6 +8,7 @@ from airflow.providers.yandex.operators.yandexcloud_dataproc import (
     DataprocDeleteClusterOperator,
 )
 
+
 YC_DP_AZ = 'ru-central1-d'
 YC_DP_SSH_PUBLIC_KEY = 'ssh'
 YC_DP_SUBNET_ID = 'fl8hk1i4fk2ch5e952ii'
