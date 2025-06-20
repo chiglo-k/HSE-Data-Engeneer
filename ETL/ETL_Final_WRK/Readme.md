@@ -116,11 +116,33 @@ LIMIT 1000;
 </details>
 
 3. Создать трансфер в **Object Storage:**
-   
+
+<details>
+<summary>Конфигурация трансфера</summary>
+    
+![](1st%20task/Screen/info_param_transfer.png)
+
+![](1st%20task/Screen/ydb_transfer%settings.png)
+
+</details>
+
 ![](1st%20task/Screen/transfer_go.png)
 
 ![](1st%20task/Screen/result_transfer.png)
-   
+
+
+**Результат задания**:
+
+- Подготовка данных в YDB;
+  
+- Успешный трансфер данных из YDB в Object Storage.
+
+
+## Задание 2: Автоматизация работы с Yandex Data Processing при помощи Apache AirFlow
+
+Требуется обрабатывать файлы (parquet или CSV) из внешнего источника. 
+
+1.	Подготовить инфраструктуру
 
 
 
