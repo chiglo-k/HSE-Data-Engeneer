@@ -29,7 +29,7 @@ CREATE TABLE it_salary_new(
 чтобы затем использовать их для подготовки данных в основной таблице.
 
 <details>
-<summary>SQL скрипт подготовки данных</summary>
+<summary>~SQL скрипт подготовки данных~</summary>
 
 ```SQL
 CREATE TABLE temp_job_titles(
@@ -101,7 +101,7 @@ INSERT INTO temp_locations(id, value) VALUES
 это поможет нагенерировать необходимый объяем тестовых данных, не копируя и вставляя код, а исполняя его столько раз сколько необходимо. 
 
 <details>
-<summary>SQL скрипт Insert Values</summary>
+<summary>~SQL скрипт Insert Values~</summary>
     
 ```SQL
 INSERT INTO it_salary_new (id, job_title, salary_usd, experience_level, company_location)
@@ -123,7 +123,7 @@ LIMIT 1000;
 **3. Создать трансфер в **Object Storage:****
 
 <details>
-<summary>Конфигурация трансфера</summary>
+<summary>~Конфигурация трансфера~</summary>
     
 ![](1st%20task/Screen/info_param_transfer.png)
 
@@ -154,7 +154,7 @@ LIMIT 1000;
 
 
 <details>
-<summary>Pyspark script</summary>
+<summary>~Pyspark script~</summary>
 
 ```python
 from pyspark.sql import SparkSession
@@ -318,7 +318,7 @@ if __name__ == "__main__":
 **2. Airflow DAG скрипт:**
 
 <details>
-<summary>Airflow script</summary>
+<summary>~Airflow script~</summary>
 
 ```python
 import uuid
@@ -484,7 +484,7 @@ with DAG(
 Для обеспечения потоковой передачи данных в Object Storage размещен скрипт kafka-write.py, который выполняет следующие функции:
 
 <details>
-<summary>kafka-write.py</summary>
+<summary>~kafka-write.py~</summary>
     
 ```python
 from pyspark.sql import SparkSession, Row
@@ -566,7 +566,7 @@ if __name__ == "__main__":
 Данный скрипт представляет собой комплексное решение для обработки данных из двух источников - Kafka и S3, с использованием PySpark Structured Streaming.
 
 <details>
-<summary>kafka-read-stream.py</summary>
+<summary>~kafka-read-stream.py~</summary>
 
 ```python
 import argparse
