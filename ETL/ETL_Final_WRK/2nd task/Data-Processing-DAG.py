@@ -9,7 +9,7 @@ from airflow.providers.yandex.operators.yandexcloud_dataproc import (
 )
 
 YC_DP_AZ = 'ru-central1-d'
-YC_DP_SSH_PUBLIC_KEY = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINwHHrUfJ22953XfFeMMuhsJyUZOHJwz5UmhXnTGBPL2 chiglok.ask@gmail.com'# Replace with your SSH key
+YC_DP_SSH_PUBLIC_KEY = 'ssh'
 YC_DP_SUBNET_ID = 'fl8hk1i4fk2ch5e952ii'
 YC_DP_SA_ID = 'aje2t33o0c2ar3n3af3p'
 YC_DP_METASTORE_URI = '10.130.0.23'
