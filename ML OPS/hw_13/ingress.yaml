@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  labels:
+    app: nginx
+  annotations:
+    # Используется nginx ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    # Опционально: редирект с HTTP на HTTPS (закомментировано)
+    # nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Опционально: настройки таймаутов
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  rules:
+  # Замените example.local на ваш домен или используйте localhost для локального тестирования
+  - host: nginx.example.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+  
+  # Опционально: настройка TLS (закомментировано)
+  # tls:
+  # - hosts:
+  #   - nginx.example.local
+  #   secretName: nginx-tls-secret
