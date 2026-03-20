@@ -1,0 +1,51 @@
+replicaCount: 2
+
+image:
+  repository: ml-service
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ml-service.local
+  path: /
+  pathType: Prefix
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  MODEL_VERSION: "1.0.0"
+
+secret:
+  POSTGRES_HOST: postgres
+  POSTGRES_USER: mlservice
+  POSTGRES_PASSWORD: mlservice_secret
+  POSTGRES_DB: mlservice_db
+
+probes:
+  startup:
+    path: /health
+    failureThreshold: 30
+    periodSeconds: 5
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    failureThreshold: 3
